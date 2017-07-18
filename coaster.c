@@ -12,6 +12,10 @@
 #include <GL/glut.h>
 #include <FTGL/ftgl.h>
 
+#ifndef M_PI
+#    define M_PI 3.14159265358979323846
+#endif
+
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
  
@@ -29,7 +33,7 @@ static void drawText(double x, double y, char *text);
 static void drawBox();
 
 int xMax, yMax;
-static float rotate;
+static float rotate, cubeRotate=0;
 
 int list;
 
@@ -58,7 +62,7 @@ int main(int argc, char *argv[]){
 
 void init(){
     
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     glEnable(GL_DEPTH_TEST);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -79,23 +83,33 @@ void myDisplay(){
     
 /*
     glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();   
-*/
-    rotate+=1.0;
-    glPushMatrix();  
-        glTranslatef(0,0,-5);
-        glRotatef(rotate, 1, -1, 1);    
-        drawBox();    
-    glPopMatrix();
+       
+*/  
+    glLoadIdentity();
+    gluLookAt(10*sin(rotate*10), 3, 10*cos(rotate*10), 
+            0, 0, 0, 
+            0, 1, 0);
     
-    glPushMatrix();
-        glTranslatef(-1,-2, -3);
-        glScalef(0.1,0.1,0.1);
-        glRotatef(rotate/2, -1, 1, 1);
+    glTranslatef(0, 0, -5);
+    glPushMatrix();  
+        
+        glRotatef(cubeRotate++, 1, -1, 1);    
         drawBox();
         
-    glPopMatrix();
+        glPushMatrix();
+            glTranslatef(-1,-2, -3);
+            glScalef(0.5,0.5,0.5);
+            glRotatef((cubeRotate*2), -1, 1, 1);
+            drawBox();
         
+        glPopMatrix();
+    glPopMatrix();
+    
+    
+        
+        
+    
+    
     
     
     glCallList(list);
@@ -106,6 +120,8 @@ void myDisplay(){
 void myTimer(int value){
     glutPostRedisplay();
     glutTimerFunc(33, myTimer, value);
+    rotate+=0.001;
+    if(rotate>2*M_PI) rotate -= 2*M_PI;
 }
 
 void myKey(unsigned char key, int x, int y){
@@ -140,36 +156,38 @@ void myReshape(int w, int h){
 }
 
 void drawBox(){
-  glBegin(GL_QUADS);
-    glVertex3f(1,1,1);
-    glVertex3f(-1,1,1);
-    glVertex3f(-1,1,-1);
-    glVertex3f(1,1,-1);
-
-    glVertex3f(1,-1,1);
-    glVertex3f(-1,-1,1);
-    glVertex3f(-1,-1,-1);
-    glVertex3f(1,-1,-1);
-
-    glVertex3f(1,1,1);
-    glVertex3f(1,-1,1);
-    glVertex3f(1,-1,-1);
-    glVertex3f(1,1,-1);
-
-    glVertex3f(-1,1,1);
-    glVertex3f(-1,-1,1);
-    glVertex3f(-1,-1,-1);
-    glVertex3f(-1,1,-1);
-
-    glVertex3f(1,1,-1);
-    glVertex3f(1,-1,-1);
-    glVertex3f(-1,-1,-1);
-    glVertex3f(-1,1,-1);
-
-    glVertex3f(1,1,1);
-    glVertex3f(1,-1,1);
-    glVertex3f(-1,-1,1);
-    glVertex3f(-1,1,1);
+    glBegin(GL_QUADS);
+    
+    glColor3f(1.0,1.0,1.0);
+        glVertex3f(1,1,1);
+        glVertex3f(-1,1,1);
+        glVertex3f(-1,1,-1);
+        glVertex3f(1,1,-1);
+    glColor3f(1.0,0,1.0);
+        glVertex3f(1,-1,1);
+        glVertex3f(-1,-1,1);
+        glVertex3f(-1,-1,-1);
+        glVertex3f(1,-1,-1);
+    glColor3f(0,0,1.0);
+        glVertex3f(1,1,1);
+        glVertex3f(1,-1,1);
+        glVertex3f(1,-1,-1);
+        glVertex3f(1,1,-1);
+    glColor3f(1.0,0,0);
+        glVertex3f(-1,1,1);
+        glVertex3f(-1,-1,1);
+        glVertex3f(-1,-1,-1);
+        glVertex3f(-1,1,-1);
+    glColor3f(1.0,1.0,0);
+        glVertex3f(1,1,-1);
+        glVertex3f(1,-1,-1);
+        glVertex3f(-1,-1,-1);
+        glVertex3f(-1,1,-1);
+    glColor3f(0,1.0,1.0);
+        glVertex3f(1,1,1);
+        glVertex3f(1,-1,1);
+        glVertex3f(-1,-1,1);
+        glVertex3f(-1,1,1);
   glEnd();
 }
 
