@@ -9,19 +9,19 @@ CND_DISTDIR=dist
 # Debug configuration
 CND_PLATFORM_Debug=GNU-Linux
 CND_ARTIFACT_DIR_Debug=dist/Debug/GNU-Linux
-CND_ARTIFACT_NAME_Debug=roller-coaster-opengl
-CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux/roller-coaster-opengl
+CND_ARTIFACT_NAME_Debug=rollercoaster
+CND_ARTIFACT_PATH_Debug=dist/Debug/GNU-Linux/rollercoaster
 CND_PACKAGE_DIR_Debug=dist/Debug/GNU-Linux/package
-CND_PACKAGE_NAME_Debug=roller-coaster-opengl.tar
-CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux/package/roller-coaster-opengl.tar
+CND_PACKAGE_NAME_Debug=rollercoaster.tar
+CND_PACKAGE_PATH_Debug=dist/Debug/GNU-Linux/package/rollercoaster.tar
 # Release configuration
 CND_PLATFORM_Release=GNU-Linux
 CND_ARTIFACT_DIR_Release=dist/Release/GNU-Linux
-CND_ARTIFACT_NAME_Release=roller-coaster-opengl
-CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux/roller-coaster-opengl
+CND_ARTIFACT_NAME_Release=rollercoaster
+CND_ARTIFACT_PATH_Release=dist/Release/GNU-Linux/rollercoaster
 CND_PACKAGE_DIR_Release=dist/Release/GNU-Linux/package
-CND_PACKAGE_NAME_Release=roller-coaster-opengl.tar
-CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux/package/roller-coaster-opengl.tar
+CND_PACKAGE_NAME_Release=rollercoaster.tar
+CND_PACKAGE_PATH_Release=dist/Release/GNU-Linux/package/rollercoaster.tar
 #
 # include compiler specific variables
 #

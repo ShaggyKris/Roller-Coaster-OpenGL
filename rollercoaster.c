@@ -27,20 +27,26 @@
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
 
-#define MAX_RAIL_SEGMENTS 10
+#define NUM_CONTROL_POINTS 5
+#define RAIL_WIDTH 0.1
+
+
 #define sixth 0.16666667163372039794921875
 
 typedef float (*bSpline)(float,float,float,float,float);
 
 int xMax, yMax;
 static float rotate, cubeRotate=0;
-static double distance = 10.0;
+static double distance = 1.0;
 int list;
+vector3* controlPoints;
 
 bSpline uniformBSplineFunctions[] = {&uniformBSpline, &uniformBSplineDerivative, &uniformBSplineSecondDerivative};
 
-int main(int argc, char *argv[]){
+vector3 largest, smallest;
 
+int main(int argc, char *argv[]){
+    srand((unsigned int) time(NULL));
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DOUBLE|GLUT_RGB|GLUT_DEPTH);
     glutInitWindowSize(500, 500);
@@ -77,7 +83,10 @@ void init(){
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
     rotate = 0;
-
+    list = glGenLists(1);
+    drawCoasterPath();
+    
+    //glTranslate()
 }
 
 void myDisplay(){
@@ -86,12 +95,15 @@ void myDisplay(){
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(distance*sin(rotate*10), 3, distance*cos(rotate*10),
+    
+    gluLookAt(distance*sin(rotate*10), 2, distance*cos(rotate*10),
             0, 0, 0,
             0, 1, 0);
 
-
+    
+    //DrawLine();
 //    glPushMatrix();
+/*
     glTranslatef(0, 0, -5);
     glRotatef(RAD2DEG*(cubeRotate+=0.1), 1, -1, 1);
     drawBox();
@@ -106,10 +118,12 @@ void myDisplay(){
         drawBox();
 
     glPopMatrix();
+*/
 //    glPopMatrix();
 
     glCallList(list);
     glutSwapBuffers();
+    
     if(cubeRotate > 360.0) cubeRotate = 0;
 }
 
@@ -149,6 +163,92 @@ void myReshape(int w, int h){
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+}
+
+int findCenterOf3DObject(vector3 smallest, vector3 largest, vector3* middle){    
+    //vector3 middle;
+    middle->x = -(largest.x+smallest.x)/2.0f;
+    middle->y = -(largest.y+smallest.y)/2.0f;
+    middle->z = -(largest.z+smallest.z)/2.0f;
+    return 0;
+}
+
+void drawCoasterPath(){
+    vector3 point, up, u, n, v;
+    int count=0;
+    float step = 0;
+    
+    up.x->0;
+    up.y->1;
+    up.z->0;
+    
+    controlPoints = (vector3*)malloc((NUM_CONTROL_POINTS + 3)*sizeof(vector3));    
+    
+    glNewList(list, GL_COMPILE);
+    
+    controlPoints[0].x = controlPoints[0].y = controlPoints[0].z = 0.0;
+    controlPoints[1].x = controlPoints[1].y = 1.0;
+    controlPoints[1].z = 0.0;
+    
+    for(int i = 2; i < NUM_CONTROL_POINTS; i++){
+        controlPoints[i].x = (float)(rand()%NUM_CONTROL_POINTS)+1;
+        controlPoints[i].y = (float)(rand()%NUM_CONTROL_POINTS)/2;
+        controlPoints[i].z = (float)(rand()%NUM_CONTROL_POINTS)+1;
+        if(controlPoints[i].x == controlPoints[i].z){
+            if(rand()%2 == 0)
+                controlPoints[i].x++;
+            else
+                controlPoints[i].z++;
+        }
+    }
+    controlPoints[NUM_CONTROL_POINTS] = controlPoints[0];
+    controlPoints[NUM_CONTROL_POINTS + 1] = controlPoints[1];
+    controlPoints[NUM_CONTROL_POINTS + 2] = controlPoints[2];   
+/*
+    for(float i = 0; i < NUM_CONTROL_POINTS; i+=0.1){
+        q(controlPoints, i, 0, &point);
+
+        if(smallest.x > point.x) smallest.x = point.x;
+        if(smallest.y > point.y) smallest.y = point.y;
+        if(smallest.z > point.z) smallest.z = point.z;
+        if(largest.x < point.x) largest.x = point.x;
+        if(largest.y < point.y) largest.y = point.y;
+        if(largest.z < point.z) largest.z = point.z;       
+    }
+    
+    findCenterOf3DObject(smallest, largest, &middle);
+    glTranslatef(middle.x, 0, middle.z);    
+*/     
+/*
+    glBegin(GL_LINE_LOOP);
+    glColor3f(1,1,1);
+*/
+    for(float i = 0; i < NUM_CONTROL_POINTS; i+=step){
+        q(controlPoints, i, 0, &point);
+        q(controlPoints, i, 1, &n);
+        //q(controlPoints, i, 2, )
+        step = RAIL_WIDTH/(sqrt(n.x*n.x+n.y*n.y+n.z*n.z));
+        
+        
+        
+        if(distance < point.x)
+            distance += (point.x+1);
+        else if(distance < (point.z+1))
+            distance += point.z;       
+
+        //glVertex3f(point.x,point.y,point.z);
+        //glTranslatef(point.x,point.y,point.z);
+        //printf("Point.x = %f\tPoint.y = %f\tPoint.z = %f\n", point.x, point.y, point.z);
+    
+        
+        
+    
+    
+    
+    }
+    
+    glEnd();
+    glEndList();
 }
 
 void drawBox(){
@@ -200,17 +300,16 @@ void drawText(double x, double y, char *text){
 
 }
 
-int q(const vector3* list, float t, int derivation, vector3* result){
-    float u = t - (int)t;
+int q(const vector3* list, float u, int derivation, vector3* result){
+    float t = u - (int)u;
+    //vector3 result;
     for(int i = 0; i < 3; i++){
         result->coord[i] =
-                uniformBSplineFunctions[derivation](
-                                                    list[(int)t-3].coord[i],
-                                                    list[(int)t-2].coord[i],
-                                                    list[(int)t-1].coord[i],
-                                                    list[(int)t].coord[i],
-                                                    u
-                                                );
+                uniformBSplineFunctions[derivation]( list[(int)u].coord[i],
+                                                     list[(int)u+1].coord[i],
+                                                     list[(int)u+2].coord[i],
+                                                     list[(int)u+3].coord[i],
+                                                     t );
     }
     return 0;
 }
@@ -249,4 +348,44 @@ float uniformBSplineSecondDerivative(float p0, float p1, float p2, float p3, flo
     r3 = 1-t;
 
     return ( r3*p0 + r2*p1 + r1*p2+ r0*p3 );
+}
+
+void crossProduct(const vector3* a, const vector3* b, vector3* result){
+    result->x = (a->y * b->z) - (a->z * b->y);
+    result->y = (a->z * b->x) - (a->x * b->z);
+    result->z = (a->x * b->y) - (a->y * b->x);
+}
+
+float vectorMagnitude(const vector3* v){
+  return sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
+}
+
+void normalizeVector(const vector3* v){
+    float magnitude = vectorMagnitude(v);
+    scale(v, 1/magnitude);
+}
+
+void scale(vector3* v, float amount){
+    v->x *= amount;
+    v->y *= amount;
+    v->z *= amount;
+}
+
+vector3 vectorAddOrSub(vector3* a, vector3 b, char type){
+    switch(type){
+        case '+':
+            a->x += b->x;
+            a->y += b->y;
+            a->z += b->z;
+            break;
+        case '-':
+            a->x += (-1)*b->x;
+            a->y += (-1)*b->y;
+            a->z += (-1)*b->z;
+            break;
+    }
+}
+
+void calculateUpVector(vector3* r, vector3* s, vector3* up){
+    float k = (r->z*s->x - r->x-s->z)/pow(r->x * r->x+r->y * r->y+r->z * r->z, 3);
 }
