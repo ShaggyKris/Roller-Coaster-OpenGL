@@ -24,6 +24,13 @@
     #define M_PI 3.14159265358979323846
 #endif
 
+
+
+#define SKY_RAD 10
+#define SKY_STEPS 40
+#define SKY_HEIGHT 10
+
+
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
 
@@ -37,9 +44,10 @@ typedef float (*bSpline)(float,float,float,float,float);
 
 int xMax, yMax;
 static float rotate, cubeRotate=0;
-static double distance = 1.0;
+static double distance = 8.0;
 int list;
 vector3* controlPoints;
+
 
 bSpline uniformBSplineFunctions[] = {&uniformBSpline, &uniformBSplineDerivative, &uniformBSplineSecondDerivative};
 
@@ -84,6 +92,7 @@ void init(){
 
     rotate = 0;
     list = glGenLists(1);
+    
     drawCoasterPath();
     
     //glTranslate()
@@ -120,9 +129,15 @@ void myDisplay(){
     glPopMatrix();
 */
 //    glPopMatrix();
-
+    
     glCallList(list);
+    glBegin(GL_POINTS);
+    glColor3f(0,1,0);
+    glVertex3f(0,0,0);
+    glEnd();
+    glFlush();
     glutSwapBuffers();
+    
     
     if(cubeRotate > 360.0) cubeRotate = 0;
 }
@@ -173,19 +188,54 @@ int findCenterOf3DObject(vector3 smallest, vector3 largest, vector3* middle){
     return 0;
 }
 
+void drawSkyAndGround(){
+    int i;
+    float step = (2*M_PI)/SKY_STEPS, x,z;
+    glBegin(GL_QUAD_STRIP);
+    for(i = 0; i < SKY_STEPS+1; i++){
+        x = sin(step*i)*SKY_RAD;
+        z = cos(step*i)*SKY_RAD;
+        glColor3f(0.1, 0.1, 0.45);
+        glVertex3f(x, -SKY_HEIGHT, z);
+        glColor3f(0.5, 0.8, 1);      
+        glVertex3f(x, SKY_HEIGHT, z);
+    }
+    glEnd();
+    glBegin(GL_TRIANGLE_FAN);
+        glColor3f(0.1,1,0.1);
+        glVertex3d(0,0,0);
+        glColor3f(0.3,0.612,0.5);
+        for(i=0; i < SKY_STEPS + 1; i++){
+        glVertex3f(sin(step*i)*SKY_RAD, 0, cos(step*i)*SKY_RAD);
+        }
+    glEnd();
+    glPushMatrix();
+        glBegin(GL_TRIANGLE_FAN);
+            glColor3f(0.5, 0.8, 1);
+            glTranslatef(0,SKY_HEIGHT,0);
+            glVertex3f(0,SKY_HEIGHT,0);
+            
+            for(i=0; i < SKY_STEPS + 1; i++){
+              glVertex3f(sin(step*i)*SKY_RAD, SKY_HEIGHT, cos(step*i)*SKY_RAD);
+            }
+        glEnd();
+    glPopMatrix();
+  
+}
+
 void drawCoasterPath(){
     vector3 point, up, u, n, v;
     int count=0;
     float step = 0;
     
-    up.x->0;
-    up.y->1;
-    up.z->0;
+    up.x = 0;
+    up.y = 1;
+    up.z = 0;
     
     controlPoints = (vector3*)malloc((NUM_CONTROL_POINTS + 3)*sizeof(vector3));    
     
     glNewList(list, GL_COMPILE);
-    
+    drawSkyAndGround();
     controlPoints[0].x = controlPoints[0].y = controlPoints[0].z = 0.0;
     controlPoints[1].x = controlPoints[1].y = 1.0;
     controlPoints[1].z = 0.0;
@@ -222,7 +272,7 @@ void drawCoasterPath(){
 /*
     glBegin(GL_LINE_LOOP);
     glColor3f(1,1,1);
-*/
+*/  
     for(float i = 0; i < NUM_CONTROL_POINTS; i+=step){
         q(controlPoints, i, 0, &point);
         q(controlPoints, i, 1, &n);
@@ -369,21 +419,6 @@ void scale(vector3* v, float amount){
     v->x *= amount;
     v->y *= amount;
     v->z *= amount;
-}
-
-vector3 vectorAddOrSub(vector3* a, vector3 b, char type){
-    switch(type){
-        case '+':
-            a->x += b->x;
-            a->y += b->y;
-            a->z += b->z;
-            break;
-        case '-':
-            a->x += (-1)*b->x;
-            a->y += (-1)*b->y;
-            a->z += (-1)*b->z;
-            break;
-    }
 }
 
 void calculateUpVector(vector3* r, vector3* s, vector3* up){

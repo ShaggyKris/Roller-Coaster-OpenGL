@@ -40,3 +40,4 @@ float uniformBSplineDerivative(float p0, float p1, float p2, float p3, float t);
 float uniformBSplineSecondDerivative(float p0, float p1, float p2, float p3, float t);
 void drawCoasterPath();
 int findCenterOf3DObject(vector3 smallest, vector3 largest, vector3* middle);
+void drawSkyAndGround();

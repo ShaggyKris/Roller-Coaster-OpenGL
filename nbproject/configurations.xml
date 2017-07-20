@@ -4,7 +4,6 @@
     <logicalFolder name="HeaderFiles"
                    displayName="Header Files"
                    projectFiles="true">
-      <itemPath>curves.h</itemPath>
       <itemPath>rollercoaster.h</itemPath>
     </logicalFolder>
     <logicalFolder name="ResourceFiles"
@@ -47,8 +46,6 @@
           </linkerLibItems>
         </linkerTool>
       </compileType>
-      <item path="curves.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="rollercoaster.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="rollercoaster.h" ex="false" tool="3" flavor2="0">
@@ -75,8 +72,6 @@
           <developmentMode>5</developmentMode>
         </asmTool>
       </compileType>
-      <item path="curves.h" ex="false" tool="3" flavor2="0">
-      </item>
       <item path="rollercoaster.c" ex="false" tool="0" flavor2="0">
       </item>
       <item path="rollercoaster.h" ex="false" tool="3" flavor2="0">
