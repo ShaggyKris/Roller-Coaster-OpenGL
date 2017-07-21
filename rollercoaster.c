@@ -36,7 +36,7 @@
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
 
-#define NUM_CONTROL_POINTS 5
+#define NUM_CONTROL_POINTS 10
 #define RAIL_WIDTH 0.1
 
 
@@ -49,11 +49,11 @@ static float rotate, cubeRotate=0;
 static double distance = 8.0;
 int list;
 vector3* controlPoints;
-float uCam, vCam, maxY;
+float uCam, vCam;
 
 bSpline uniformBSplineFunctions[] = {&uniformBSpline, &uniformBSplineDerivative, &uniformBSplineSecondDerivative};
 
-vector3 largest, smallest, cameraPos, cameraUp, focalPoint;
+vector3 largest, smallest, cameraPos, cameraUp, focalPoint, max;
 
 int main(int argc, char *argv[]){
     srand((unsigned int) time(NULL));
@@ -120,26 +120,6 @@ void myDisplay(){
             0, 1, 0);
     }
     
-    //DrawLine();
-//    glPushMatrix();
-/*
-    glTranslatef(0, 0, -5);
-    glRotatef(RAD2DEG*(cubeRotate+=0.1), 1, -1, 1);
-    drawBox();
-
-    glPushMatrix();
-        glRotatef(RAD2DEG*cubeRotate, 1, 1, 0);
-        glScalef(0.5, 0.5, 0.5);
-        glTranslatef(-5.0, -5.0, -5.0);
-
-        glRotatef(RAD2DEG*(cubeRotate/2.0), 1, -1, 1);
-
-        drawBox();
-
-    glPopMatrix();
-*/
-//    glPopMatrix();
-    
     glCallList(list);
     
     glutSwapBuffers();
@@ -150,11 +130,11 @@ void myDisplay(){
 
 void myTimer(int value){
     vector3 velocity, s;
-    
+    float mag;
     q(controlPoints, uCam, 1, &velocity);
-    //float mag = vectorMagnitude(&velocity);
+    mag = vectorMagnitude(&velocity);
     printf("This is uCam then: %f\n", uCam);
-    uCam += (vCam * 0.033)/ (sqrt(velocity.x*velocity.x+velocity.y*velocity.y+velocity.z*velocity.z));
+    uCam += (vCam * 0.033)/ mag;
     
     if(uCam > NUM_CONTROL_POINTS) uCam -= NUM_CONTROL_POINTS;
     printf("This is uCam now: %f\n", uCam);
@@ -162,19 +142,19 @@ void myTimer(int value){
     q(controlPoints, uCam, 0, &cameraPos);
     q(controlPoints, uCam, 2, &s);
     normalizeVector(&velocity);
-    calculateUpVector(&velocity, &s, &cameraUp);
-    normalizeVector(&cameraUp);
     
-    vCam = sqrt((maxY+maxY*0.25) - cameraPos.y);
+    calculateUpVector(&velocity, &s, &cameraUp);   
     
-//    focalPoint = cameraPos;
-//    focalPoint.x += velocity.x;
-//    focalPoint.y += velocity.y;
-//    focalPoint.z += velocity.z;
+    vCam = sqrt((max.y+max.y*0.25) - cameraPos.y);
     
+    focalPoint = cameraPos;
+    vectorAdd_Sub(&focalPoint, &velocity, 1); 
+    
+    printf("Cam Up.x: %f\tCam up.y: %f\tCam up.z: %f\n",cameraUp.x,cameraUp.y,cameraUp.z);
+        
     vectorAdd_Sub(&cameraPos, &cameraUp, 1);
+    //normalizeVector(&cameraPos);
     
-     
     
     glutPostRedisplay();
     glutTimerFunc(33, myTimer, value);
@@ -233,8 +213,8 @@ void drawSkyAndGround(){
     for(i = 0; i < SKY_STEPS+1; i++){
         x = sin(step*i)*SKY_RAD;
         z = cos(step*i)*SKY_RAD;
-        glColor3f(0.1, 0.1, 0.45);
-        glVertex3f(x, -SKY_HEIGHT, z);
+        glColor3f(0.3, 0.3, 0.6);
+        glVertex3f(x, 0, z);
         glColor3f(0.5, 0.8, 1);      
         glVertex3f(x, SKY_HEIGHT, z);
     }
@@ -262,7 +242,7 @@ void drawSkyAndGround(){
 }
 
 void drawCoasterPath(){
-    vector3 point, up, u, n, v, s;
+    vector3 point, up, u, n, v, s, middle;
     int count=0;
     float step = 0;
     
@@ -273,45 +253,46 @@ void drawCoasterPath(){
     controlPoints = (vector3*)malloc((NUM_CONTROL_POINTS + 3)*sizeof(vector3));    
     
     glNewList(list, GL_COMPILE);
-    drawSkyAndGround();
+    
     controlPoints[0].x = controlPoints[0].y = controlPoints[0].z = 0.0;
     controlPoints[1].x = controlPoints[1].y = 1.0;
     controlPoints[1].z = 0.0;
     
     for(int i = 2; i < NUM_CONTROL_POINTS; i++){
-        controlPoints[i].x = (float)(rand()%NUM_CONTROL_POINTS)+1;
-        controlPoints[i].y = (float)(rand()%NUM_CONTROL_POINTS)/2;
-        controlPoints[i].z = (float)(rand()%NUM_CONTROL_POINTS)+1;
+        controlPoints[i].x = ((float)(rand()%NUM_CONTROL_POINTS+1)-NUM_CONTROL_POINTS)+1;
+        controlPoints[i].y = (float)(rand()%(SKY_HEIGHT/2));
+        controlPoints[i].z = ((float)(rand()%NUM_CONTROL_POINTS+1)-NUM_CONTROL_POINTS)+1;
         if(controlPoints[i].x == controlPoints[i].z){
             if(rand()%2 == 0)
-                controlPoints[i].x++;
+                controlPoints[i].x+2;
             else
-                controlPoints[i].z++;
+                controlPoints[i].z+2;
         }
-        if(controlPoints[i].y > maxY) maxY = controlPoints[i].y;
+        if(controlPoints[i].x > max.x) max.x = controlPoints[i].x;
+        if(controlPoints[i].y > max.y) max.y = controlPoints[i].y;
+        if(controlPoints[i].z > max.z) max.z = controlPoints[i].z;
     }
     controlPoints[NUM_CONTROL_POINTS] = controlPoints[0];
     controlPoints[NUM_CONTROL_POINTS + 1] = controlPoints[1];
     controlPoints[NUM_CONTROL_POINTS + 2] = controlPoints[2];   
-/*
-    for(float i = 0; i < NUM_CONTROL_POINTS; i+=0.1){
-        q(controlPoints, i, 0, &point);
 
-        if(smallest.x > point.x) smallest.x = point.x;
-        if(smallest.y > point.y) smallest.y = point.y;
-        if(smallest.z > point.z) smallest.z = point.z;
-        if(largest.x < point.x) largest.x = point.x;
-        if(largest.y < point.y) largest.y = point.y;
-        if(largest.z < point.z) largest.z = point.z;       
-    }
-    
-    findCenterOf3DObject(smallest, largest, &middle);
-    glTranslatef(middle.x, 0, middle.z);    
-*/     
+//    for(int i = 0; i < NUM_CONTROL_POINTS; i++){
+//        //q(controlPoints, i, 0, &point);
+//        if(smallest.x > controlPoints[i].x) smallest.x = controlPoints[i].x;
+//        if(smallest.y > controlPoints[i].y) smallest.y = controlPoints[i].y;
+//        if(smallest.z > controlPoints[i].z) smallest.z = controlPoints[i].z;
+//        if(largest.x < controlPoints[i].x) largest.x = controlPoints[i].x;
+//        if(largest.y < controlPoints[i].y) largest.y = controlPoints[i].y;
+//        if(largest.z < controlPoints[i].z) largest.z = controlPoints[i].z;       
+//    }
+//    
+//    findCenterOf3DObject(smallest, largest, &middle);
+//    glTranslatef(middle.x, 1, middle.z);    
+    drawSkyAndGround(); 
 
     glBegin(GL_LINE_LOOP);
     
-  
+    //glTranslatef(0,1,0);
     for(float i = 0; i < NUM_CONTROL_POINTS; i+=step){
         q(controlPoints, i, 0, &point);
         
@@ -334,13 +315,20 @@ void drawCoasterPath(){
         glVertex3f(point.x,point.y,point.z); 
         
         q(controlPoints, i, 2, &s);           
-                
-        negativeVector(&n);        
-        normalizeVector(&n);        
-        crossProduct(&up, &n, &u);        
-        normalizeVector(&u);        
-        crossProduct(&n,&u,&v);
-        calculateUpVector(&n,&s,&up);
+        
+
+//        normalizeVector(&n);
+//        normalizeVector(&s);
+//        
+//        calculateUpVector(&n, &s, &up);
+        
+        
+//        negativeVector(&n);        
+//        normalizeVector(&n);        
+//        crossProduct(&up, &n, &u);        
+//        normalizeVector(&u);        
+//        crossProduct(&n,&u,&v);
+//        calculateUpVector(&n,&s,&up);
         
 //        glPushMatrix();
 //            glColor3f(0.5,1,1);
@@ -415,6 +403,7 @@ int q(const vector3* list, float u, int derivation, vector3* result){
                                                      list[(int)u+3].coord[i],
                                                      t );
     }
+    normalizeVector(result);
     return 0;
 }
 
@@ -480,7 +469,7 @@ void calculateUpVector(const vector3* r, const vector3* s, vector3* up){
     crossProduct(&r,&s,&numerator);
     float mag = vectorMagnitude(r);
     float k = numerator.y/pow(mag, 3);
-    k /= 8;
+    //k /= 8;
     if(k > M_PI/2)
         k = M_PI/2;
     else if(k < -M_PI/2)
@@ -503,3 +492,8 @@ void vectorAdd_Sub(vector3* affected, const vector3* effector, int flag){
     affected->y += flag*effector->y;
     affected->z += flag*effector->z;
 }
+//void vectorAdd_Sub(vector3* affected, float effector, int flag){
+//    affected->x += flag*effector;
+//    affected->y += flag*effector;
+//    affected->z += flag*effector;
+//}
