@@ -11,7 +11,7 @@
  * Created on July 18, 2017, 9:40 PM
  */
 
-#include "rollercoaster.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +19,8 @@
 #include <math.h>
 #include <GL/glut.h>
 #include <FTGL/ftgl.h>
+#include "rollercoaster.h"
+
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -41,17 +43,17 @@
 #define sixth 0.16666667163372039794921875
 
 typedef float (*bSpline)(float,float,float,float,float);
-
+int fp;
 int xMax, yMax;
 static float rotate, cubeRotate=0;
 static double distance = 8.0;
 int list;
 vector3* controlPoints;
-
+float uCam, vCam, maxY;
 
 bSpline uniformBSplineFunctions[] = {&uniformBSpline, &uniformBSplineDerivative, &uniformBSplineSecondDerivative};
 
-vector3 largest, smallest;
+vector3 largest, smallest, cameraPos, cameraUp, focalPoint;
 
 int main(int argc, char *argv[]){
     srand((unsigned int) time(NULL));
@@ -92,10 +94,12 @@ void init(){
 
     rotate = 0;
     list = glGenLists(1);
-    
+    uCam = 0;
+    vCam = 1;
+    fp = 0;
     drawCoasterPath();
     
-    //glTranslate()
+    
 }
 
 void myDisplay(){
@@ -105,10 +109,16 @@ void myDisplay(){
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
+    if(fp){
+        gluLookAt(cameraPos.x, cameraPos.y, cameraPos.z,
+            focalPoint.x, focalPoint.y, focalPoint.z,
+            cameraUp.x, cameraUp.y, cameraUp.z);
+    }
+    else{
     gluLookAt(distance*sin(rotate*10), 2, distance*cos(rotate*10),
             0, 0, 0,
             0, 1, 0);
-
+    }
     
     //DrawLine();
 //    glPushMatrix();
@@ -131,11 +141,7 @@ void myDisplay(){
 //    glPopMatrix();
     
     glCallList(list);
-    glBegin(GL_POINTS);
-    glColor3f(0,1,0);
-    glVertex3f(0,0,0);
-    glEnd();
-    glFlush();
+    
     glutSwapBuffers();
     
     
@@ -143,14 +149,46 @@ void myDisplay(){
 }
 
 void myTimer(int value){
+    vector3 velocity, s;
+    
+    q(controlPoints, uCam, 1, &velocity);
+    //float mag = vectorMagnitude(&velocity);
+    printf("This is uCam then: %f\n", uCam);
+    uCam += (vCam * 0.033)/ (sqrt(velocity.x*velocity.x+velocity.y*velocity.y+velocity.z*velocity.z));
+    
+    if(uCam > NUM_CONTROL_POINTS) uCam -= NUM_CONTROL_POINTS;
+    printf("This is uCam now: %f\n", uCam);
+    
+    q(controlPoints, uCam, 0, &cameraPos);
+    q(controlPoints, uCam, 2, &s);
+    normalizeVector(&velocity);
+    calculateUpVector(&velocity, &s, &cameraUp);
+    normalizeVector(&cameraUp);
+    
+    vCam = sqrt((maxY+maxY*0.25) - cameraPos.y);
+    
+//    focalPoint = cameraPos;
+//    focalPoint.x += velocity.x;
+//    focalPoint.y += velocity.y;
+//    focalPoint.z += velocity.z;
+    
+    vectorAdd_Sub(&cameraPos, &cameraUp, 1);
+    
+     
+    
     glutPostRedisplay();
     glutTimerFunc(33, myTimer, value);
+    
     rotate+=0.001;
-    if(rotate>2*M_PI) rotate -= 2*M_PI;
+    if(rotate>2*M_PI) rotate -= 2*M_PI;   
 }
 
 void myKey(unsigned char key, int x, int y){
-
+    switch(key){
+        case ' ':
+            fp = !fp;
+            break;
+    }
 }
 
 void keyPress(int key, int x, int y){
@@ -224,7 +262,7 @@ void drawSkyAndGround(){
 }
 
 void drawCoasterPath(){
-    vector3 point, up, u, n, v;
+    vector3 point, up, u, n, v, s;
     int count=0;
     float step = 0;
     
@@ -250,6 +288,7 @@ void drawCoasterPath(){
             else
                 controlPoints[i].z++;
         }
+        if(controlPoints[i].y > maxY) maxY = controlPoints[i].y;
     }
     controlPoints[NUM_CONTROL_POINTS] = controlPoints[0];
     controlPoints[NUM_CONTROL_POINTS + 1] = controlPoints[1];
@@ -269,37 +308,52 @@ void drawCoasterPath(){
     findCenterOf3DObject(smallest, largest, &middle);
     glTranslatef(middle.x, 0, middle.z);    
 */     
-/*
+
     glBegin(GL_LINE_LOOP);
-    glColor3f(1,1,1);
-*/  
+    
+  
     for(float i = 0; i < NUM_CONTROL_POINTS; i+=step){
         q(controlPoints, i, 0, &point);
-        q(controlPoints, i, 1, &n);
-        //q(controlPoints, i, 2, )
-        step = RAIL_WIDTH/(sqrt(n.x*n.x+n.y*n.y+n.z*n.z));
-        
         
         
         if(distance < point.x)
             distance += (point.x+1);
         else if(distance < (point.z+1))
-            distance += point.z;       
-
-        //glVertex3f(point.x,point.y,point.z);
-        //glTranslatef(point.x,point.y,point.z);
-        //printf("Point.x = %f\tPoint.y = %f\tPoint.z = %f\n", point.x, point.y, point.z);
-    
+            distance += point.z;
+        
+        q(controlPoints, i, 1, &n);
         
         
-    
-    
-    
+        step = RAIL_WIDTH/(sqrt(n.x*n.x + 
+            n.y*n.y + 
+            n.z*n.z)
+            );
+        if(step < 0.01) step = 0.01;
+        
+        glColor3f(0,0,0);
+        glVertex3f(point.x,point.y,point.z); 
+        
+        q(controlPoints, i, 2, &s);           
+                
+        negativeVector(&n);        
+        normalizeVector(&n);        
+        crossProduct(&up, &n, &u);        
+        normalizeVector(&u);        
+        crossProduct(&n,&u,&v);
+        calculateUpVector(&n,&s,&up);
+        
+//        glPushMatrix();
+//            glColor3f(0.5,1,1);
+//            //glVertex3f(up.x,up.y,up.z);
+//            printf("Up.x: %0.10f\tUp.y: %0.10f\tUp.z: %0.10f\t\n", up.x,up.y,up.z);
+//        glPopMatrix();
+        
     }
     
     glEnd();
     glEndList();
 }
+
 
 void drawBox(){
     glBegin(GL_QUADS);
@@ -410,9 +464,9 @@ float vectorMagnitude(const vector3* v){
   return sqrt((v->x * v->x) + (v->y * v->y) + (v->z * v->z));
 }
 
-void normalizeVector(const vector3* v){
-    float magnitude = vectorMagnitude(v);
-    scale(v, 1/magnitude);
+void normalizeVector(vector3* v){
+    float mag = vectorMagnitude(v);
+    scale(&v, 1/mag);
 }
 
 void scale(vector3* v, float amount){
@@ -421,6 +475,31 @@ void scale(vector3* v, float amount){
     v->z *= amount;
 }
 
-void calculateUpVector(vector3* r, vector3* s, vector3* up){
-    float k = (r->z*s->x - r->x-s->z)/pow(r->x * r->x+r->y * r->y+r->z * r->z, 3);
+void calculateUpVector(const vector3* r, const vector3* s, vector3* up){
+    vector3 numerator;
+    crossProduct(&r,&s,&numerator);
+    float mag = vectorMagnitude(r);
+    float k = numerator.y/pow(mag, 3);
+    k /= 8;
+    if(k > M_PI/2)
+        k = M_PI/2;
+    else if(k < -M_PI/2)
+        k = -M_PI/2;
+    
+    up->x = (1-cos(-k))*r->x*r->y-sin(-k)*r->z;
+    up->y = (1-cos(-k))*r->y*r->y+cos(-k);
+    up->z = (1-cos(-k))*r->y*r->z+sin(-k)*r->x;
+    normalizeVector(up);
+}
+
+void negativeVector(vector3* v){
+    v->x *= (-1);
+    v->y *= (-1);
+    v->z *= (-1);
+}
+
+void vectorAdd_Sub(vector3* affected, const vector3* effector, int flag){
+    affected->x += flag*effector->x;
+    affected->y += flag*effector->y;
+    affected->z += flag*effector->z;
 }
