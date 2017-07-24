@@ -25,7 +25,7 @@ $(TARGET): $(OBJECTS)
 	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
 
 run: $(TARGET)
-	./asteroids
+	./rollercoaster
 
 clean:
 	-rm -f *.o
