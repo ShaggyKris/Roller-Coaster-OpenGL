@@ -3,8 +3,11 @@
 If you cannot use the Netbeans makefile, please create a new makefile with the following:
 
 TARGET = rollercoaster
+
 LIBS = -lglut -lGLU -lGL -lm -lftgl 
+
 CC = gcc
+
 CFLAGS = -g -Wall -I/usr/include/FTGL -I/usr/include/freetype2
 
 .PHONY: default run clean
