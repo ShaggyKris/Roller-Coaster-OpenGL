@@ -51,7 +51,7 @@ float uCam, vCam;
 bSpline uniformBSplineFunctions[] = {&uniformBSpline, &uniformBSplineDerivative, &uniformBSplineSecondDerivative};
 
 vector3 largest, smallest, cameraPos, cameraUp, focalPoint, max;
-GLUquadric* qobj;
+//GLUquadric* qobj;
 
 int main(int argc, char *argv[]){
     srand((unsigned int) time(NULL));
@@ -96,13 +96,13 @@ void init(){
     vCam = 1;
     max.x = max.y = max.z = 0;
     fp = addUpVector = 0;
-    qobj = gluNewQuadric();
+    //qobj = gluNewQuadric();
     
-    gluQuadricNormals(qobj, GLU_SMOOTH);
+    //gluQuadricNormals(qobj, GLU_SMOOTH);
     
     
     drawCoasterPath();
-    
+    printf("We've started\n");
     
 }
 
@@ -164,20 +164,22 @@ void myDisplay(){
 }
 //This is all pretty explanatory due to the names of the variables
 void myTimer(int value){
-    vector3 velocity, v;
+    vector3 velocity, v, s;
     float mag;
     q(controlPoints, uCam, 0, &cameraPos);
     q(controlPoints, uCam, 1, &velocity);    
-    q(controlPoints, uCam, 2, &v);
+    q(controlPoints, uCam, 2, &s);
     
     mag = vectorMagnitude(&velocity);
     //printf("This is uCam then: %f\n", uCam);
     uCam += (vCam * 0.033)/ mag;    
     //Resets uCam so that we don't go out of boundary
     if(uCam > NUM_CONTROL_POINTS) uCam -= NUM_CONTROL_POINTS;
-    vCam = mag/2;
+    q(controlPoints, value, 1, &v);
     
-    calculateUpVector(&velocity, &v, &cameraUp);   
+    vCam = vectorMagnitude(&v);
+    
+    calculateUpVector(&velocity, &s, &cameraUp);   
     //normalizeVector(&cameraUp);
     
     focalPoint = cameraPos;
@@ -186,12 +188,13 @@ void myTimer(int value){
     //printf("Cam Up.x: %f\tCam up.y: %f\tCam up.z: %f\n",cameraUp.x,cameraUp.y,cameraUp.z);
     vectorAdd_Sub(&cameraPos, &cameraUp, addUpVector);  
     //cameraPos.y -= 1;
+    rotate+=0.001;
+    if(rotate>2*M_PI) rotate -= 2*M_PI;
     
     glutPostRedisplay();
     glutTimerFunc(33, myTimer, value);
     
-    rotate+=0.001;
-    if(rotate>2*M_PI) rotate -= 2*M_PI;   
+       
 }
 
 void myKey(unsigned char key, int x, int y){
@@ -226,7 +229,7 @@ void myReshape(int w, int h){
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(90, xMax/yMax, 0.1, 20);
+    gluPerspective(90, xMax/yMax, 0.1, 30);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -367,10 +370,10 @@ void drawCoasterPath(){
         glColor3f(0,0,0);
         glPushMatrix();
             glTranslatef(point.x, point.y, point.z);
-            printf("Point x: %f\tPoint y: %f\tPoint z: %f\n",point.x, point.y, point.z);
+            //printf("Point x: %f\tPoint y: %f\tPoint z: %f\n",point.x, point.y, point.z);
             glPushMatrix();
                 glTranslatef(u.x,u.y,u.z);
-                printf("u x: %f\tu y: %f\tu z: %f\n",u.x,u.y,u.z);
+                //printf("u x: %f\tu y: %f\tu z: %f\n",u.x,u.y,u.z);
                 glScalef(0.003, 0.003, 0.003);
                 drawBox();
             glPopMatrix();
@@ -385,7 +388,7 @@ void drawCoasterPath(){
             
          
         glPopMatrix();
-        glFlush();    
+        //glFlush();    
        
     }
     
