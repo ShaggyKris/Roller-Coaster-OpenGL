@@ -180,18 +180,18 @@ void myTimer(int value){
     
     //Calculate the movement along the track using acceleration
     w = 0.5*(vCam*vCam*m) + (m*g*cameraPos.y);
-    vCam = sqrt(2*((g*cameraPos.y)));
+    vCam = sqrt((2*g*cameraPos.y) - cameraPos.y);
     printf("vCam: %f\n",vCam);
     
     calculateUpVector(&velocity, &s, &cameraUp);   
     normalizeVector(&cameraUp);
     
-    if(cameraUp.x > M_PI/2) cameraUp.x = 1;
-    if(cameraUp.x < -1) cameraUp.x = -1;
-    if(cameraUp.y > 1) cameraUp.y = 1;
-    if(cameraUp.y < -1) cameraUp.y = -1;
-    if(cameraUp.z > 1) cameraUp.z = 1;
-    if(cameraUp.z < -1) cameraUp.z = -1;
+    if(cameraUp.x > M_PI/2) cameraUp.x = M_PI/2;
+    if(cameraUp.x < -M_PI/2) cameraUp.x = -M_PI/2;
+    if(cameraUp.y > M_PI/2) cameraUp.y = M_PI/2;
+    if(cameraUp.y < -M_PI/2) cameraUp.y = -M_PI/2;
+    if(cameraUp.z > M_PI/2) cameraUp.z = M_PI/2;
+    if(cameraUp.z < -M_PI/2) cameraUp.z = -M_PI/2;
     
     vectorAdd_Sub(&cameraPos, &cameraUp, addUpVector);
     
@@ -545,10 +545,10 @@ void calculateUpVector(const vector3* r, const vector3* s, vector3* up){
     float mag = vectorMagnitude(r);
     float k = numerator.y/(mag*mag*mag);
     //k /= 8;
-    if(k > 1)
-        k = 1;
-    else if(k < -1)
-        k = -1;
+    if(k > M_PI/2)
+        k = M_PI/2;
+    else if(k < -M_PI/2)
+        k = -M_PI/2;
     
     up->x = (1-cos(-k))*r->x*r->y-sin(-k)*r->z;
     up->y = (1-cos(-k))*r->y*r->y+cos(-k);
