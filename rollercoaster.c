@@ -27,13 +27,13 @@
 #endif
 
 #define SKY_STEPS 40
-#define SKY_HEIGHT 10
+#define SKY_HEIGHT 100
 
 
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
 
-#define NUM_CONTROL_POINTS 10
+#define NUM_CONTROL_POINTS 50
 #define RAIL_WIDTH 0.1
 
 
@@ -44,7 +44,7 @@ int fp, addUpVector;
 int xMax, yMax;
 static float rotate, cubeRotate=0;
 static double distance = 8.0;
-int list;
+int list, hill;
 vector3* controlPoints;
 float uCam, vCam;
 
@@ -92,7 +92,7 @@ void init(){
 
     rotate = 0;
     list = glGenLists(1);
-    uCam = 0;
+    uCam = hill = 0;
     vCam = 1;
     max.x = max.y = max.z = 0;
     fp = addUpVector = 0;
@@ -108,7 +108,7 @@ void init(){
 
 void myDisplay(){
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-
+    char speed[64];
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -150,7 +150,8 @@ void myDisplay(){
         glColor3f(1,1,1);
         drawText(0, 10, "Press SPACE to change perspective.");
         drawText(0, 15, "Press F to add Up vector to Camera Position.");
-
+        sprintf(speed, "Speed: %f", vCam);
+        drawText(0, 20, speed);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
     glPopMatrix();
@@ -165,7 +166,7 @@ void myDisplay(){
 //This is all pretty explanatory due to the names of the variables
 void myTimer(int value){
     vector3 velocity, v, s;
-    float mag;
+    float mag, w, m = 5000, g = 9.81, lastY, yVal;
     q(controlPoints, uCam, 0, &cameraPos);
     q(controlPoints, uCam, 1, &velocity);    
     q(controlPoints, uCam, 2, &s);
@@ -175,18 +176,30 @@ void myTimer(int value){
     uCam += (vCam * 0.033)/ mag;    
     //Resets uCam so that we don't go out of boundary
     if(uCam > NUM_CONTROL_POINTS) uCam -= NUM_CONTROL_POINTS;
-    q(controlPoints, value, 1, &v);
+          
     
-    vCam = vectorMagnitude(&v);
+    //Calculate the movement along the track using acceleration
+    w = 0.5*(vCam*vCam*m) + (m*g*cameraPos.y);
+    vCam = sqrt(2*((g*cameraPos.y)));
+    printf("vCam: %f\n",vCam);
     
     calculateUpVector(&velocity, &s, &cameraUp);   
-    //normalizeVector(&cameraUp);
+    normalizeVector(&cameraUp);
+    
+    if(cameraUp.x > M_PI/2) cameraUp.x = 1;
+    if(cameraUp.x < -1) cameraUp.x = -1;
+    if(cameraUp.y > 1) cameraUp.y = 1;
+    if(cameraUp.y < -1) cameraUp.y = -1;
+    if(cameraUp.z > 1) cameraUp.z = 1;
+    if(cameraUp.z < -1) cameraUp.z = -1;
+    
+    vectorAdd_Sub(&cameraPos, &cameraUp, addUpVector);
     
     focalPoint = cameraPos;
     vectorAdd_Sub(&focalPoint, &velocity, 1); 
     
-    //printf("Cam Up.x: %f\tCam up.y: %f\tCam up.z: %f\n",cameraUp.x,cameraUp.y,cameraUp.z);
-    vectorAdd_Sub(&cameraPos, &cameraUp, addUpVector);  
+    printf("Cam Up.x: %f\tCam up.y: %f\tCam up.z: %f\n",cameraUp.x,cameraUp.y,cameraUp.z);
+      
     //cameraPos.y -= 1;
     rotate+=0.001;
     if(rotate>2*M_PI) rotate -= 2*M_PI;
@@ -229,7 +242,7 @@ void myReshape(int w, int h){
     glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(90, xMax/yMax, 0.1, 30);
+    gluPerspective(90, xMax/yMax, 0.1, 5*NUM_CONTROL_POINTS);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -290,10 +303,9 @@ void drawCoasterPath(){
     vector3 point, up, u, n, s;
     int count=0;
     float step = 0, mag;
-    largest.y = 0;
-    up.x = largest.x = 0;
+    up.x = 0;
     up.y = 1;
-    up.z = largest.z = 0;
+    up.z = 0;
     
     controlPoints = (vector3*)malloc((NUM_CONTROL_POINTS + 3)*sizeof(vector3));    
     
@@ -308,7 +320,7 @@ void drawCoasterPath(){
     //Procedurally generate control points for a random track
     for(int i = 2; i < NUM_CONTROL_POINTS; i++){
         controlPoints[i].x = ((float)(rand()%NUM_CONTROL_POINTS+1)-NUM_CONTROL_POINTS)+1;
-        controlPoints[i].y = (float)(rand()%(SKY_HEIGHT/2));
+        controlPoints[i].y = (float)(rand()%(SKY_HEIGHT)+1);
         controlPoints[i].z = ((float)(rand()%NUM_CONTROL_POINTS+1)-NUM_CONTROL_POINTS)+1;
         if(controlPoints[i].x == controlPoints[i].z){
             if(rand()%2 == 0)
@@ -324,7 +336,9 @@ void drawCoasterPath(){
     controlPoints[NUM_CONTROL_POINTS] = controlPoints[0];
     controlPoints[NUM_CONTROL_POINTS + 1] = controlPoints[1];
     controlPoints[NUM_CONTROL_POINTS + 2] = controlPoints[2];   
-
+    
+    
+    
    
      
     //Draw the main line track. This would have been omitted had I got things working.
@@ -464,7 +478,8 @@ void q(const vector3* list, float u, int derivation, vector3* result){
                                                      list[(int)u+3].coord[i],
                                                      t );
     }
-    normalizeVector(result);
+    if(derivation != 0)
+        normalizeVector(result);
 }
 
 float uniformBSpline(float p0, float p1, float p2, float p3, float t){
@@ -528,9 +543,9 @@ void calculateUpVector(const vector3* r, const vector3* s, vector3* up){
     vector3 numerator;
     crossProduct(&r,&s,&numerator);
     float mag = vectorMagnitude(r);
-    float k = numerator.y/pow(mag, 3);
+    float k = numerator.y/(mag*mag*mag);
     //k /= 8;
-    if(k >1)
+    if(k > 1)
         k = 1;
     else if(k < -1)
         k = -1;
@@ -538,7 +553,9 @@ void calculateUpVector(const vector3* r, const vector3* s, vector3* up){
     up->x = (1-cos(-k))*r->x*r->y-sin(-k)*r->z;
     up->y = (1-cos(-k))*r->y*r->y+cos(-k);
     up->z = (1-cos(-k))*r->y*r->z+sin(-k)*r->x;
-    normalizeVector(up);
+    
+    
+    
 }
 
 vector3 negativeVector(vector3 v){
@@ -552,6 +569,12 @@ void vectorAdd_Sub(vector3* affected, const vector3* effector, int flag){
     affected->x += flag*effector->x;
     affected->y += flag*effector->y;
     affected->z += flag*effector->z;
+}
+
+void dotProduct(const vector3* a, const vector3* b, vector3* product){
+    product->x = a->x*b->x;
+    product->y = a->y*b->y;
+    product->z = a->z*b->z;
 }
 //void vectorAdd_Sub(vector3* affected, float effector, int flag){
 //    affected->x += flag*effector;
