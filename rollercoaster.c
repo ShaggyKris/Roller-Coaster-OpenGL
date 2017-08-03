@@ -27,7 +27,7 @@
 #endif
 
 #define SKY_STEPS 40
-#define SKY_HEIGHT 100
+#define SKY_HEIGHT 40
 
 
 #define RAD2DEG 180.0/M_PI
@@ -102,7 +102,7 @@ void init(){
     
     
     drawCoasterPath();
-    printf("We've started\n");
+//    printf("We've started\n");
     
 }
 
@@ -122,7 +122,7 @@ void myDisplay(){
     }
     else{
     gluLookAt(distance*sin(rotate*10), 2, distance*cos(rotate*10),
-            0, 0, 0,
+            0, 1, 0,
             0, 1, 0);
     }
 //    vectorAdd_Sub(&cameraPos, &cameraUp, -1);
@@ -165,40 +165,45 @@ void myDisplay(){
 }
 //This is all pretty explanatory due to the names of the variables
 void myTimer(int value){
-    vector3 velocity, v, s;
-    float mag, w, m = 5000, g = 9.81, lastY, yVal;
+    vector3 velocity, n, s;
+    float mag, w, m = 5, g = 9.81, lastY, yVal, qt;
     q(controlPoints, uCam, 0, &cameraPos);
     q(controlPoints, uCam, 1, &velocity);    
     q(controlPoints, uCam, 2, &s);
     
+    w = 0.5*(vCam*vCam) + (g*cameraPos.y);
+    vCam = sqrt(vCam*vCam);
+    
     mag = vectorMagnitude(&velocity);
+    
     //printf("This is uCam then: %f\n", uCam);
-    uCam += (vCam * 0.033)/ mag;    
+    uCam += (vCam*0.033)/mag;    
     //Resets uCam so that we don't go out of boundary
     if(uCam > NUM_CONTROL_POINTS) uCam -= NUM_CONTROL_POINTS;
           
     
     //Calculate the movement along the track using acceleration
     w = 0.5*(vCam*vCam*m) + (m*g*cameraPos.y);
-    vCam = sqrt((2*g*cameraPos.y) - cameraPos.y);
-    printf("vCam: %f\n",vCam);
+    vCam = sqrt(2*((w/m)- (g*cameraPos.y)));
+//    printf("vCam: %f\n",vCam);
     
-    calculateUpVector(&velocity, &s, &cameraUp);   
-    normalizeVector(&cameraUp);
     
-    if(cameraUp.x > M_PI/2) cameraUp.x = M_PI/2;
-    if(cameraUp.x < -M_PI/2) cameraUp.x = -M_PI/2;
-    if(cameraUp.y > M_PI/2) cameraUp.y = M_PI/2;
-    if(cameraUp.y < -M_PI/2) cameraUp.y = -M_PI/2;
-    if(cameraUp.z > M_PI/2) cameraUp.z = M_PI/2;
-    if(cameraUp.z < -M_PI/2) cameraUp.z = -M_PI/2;
+    calculateUpVector(&n, &s, &cameraUp);   
+    //normalizeVector(&cameraUp);
+    
+//    if(cameraUp.x > M_PI/2) cameraUp.x = M_PI/2;
+//    if(cameraUp.x < -M_PI/2) cameraUp.x = -M_PI/2;
+//    if(cameraUp.y > M_PI/2) cameraUp.y = M_PI/2;
+//    if(cameraUp.y < -M_PI/2) cameraUp.y = -M_PI/2;
+//    if(cameraUp.z > M_PI/2) cameraUp.z = M_PI/2;
+//    if(cameraUp.z < -M_PI/2) cameraUp.z = -M_PI/2;
     
     vectorAdd_Sub(&cameraPos, &cameraUp, addUpVector);
     
     focalPoint = cameraPos;
     vectorAdd_Sub(&focalPoint, &velocity, 1); 
     
-    printf("Cam Up.x: %f\tCam up.y: %f\tCam up.z: %f\n",cameraUp.x,cameraUp.y,cameraUp.z);
+//    printf("Cam Up.x: %f\tCam up.y: %f\tCam up.z: %f\n",cameraUp.x,cameraUp.y,cameraUp.z);
       
     //cameraPos.y -= 1;
     rotate+=0.001;
@@ -377,9 +382,14 @@ void drawCoasterPath(){
         calculateUpVector(&n, &s, &up);
         
         crossProduct(&n, &up, &u);
+        normalizeVector(&u);
+        printf("Length: %f\n", vectorMagnitude(&u));
+        scale(&u,0.7);
         
-        scale(&u,0.01);
         
+        
+        
+        float x = 0.1, y = 0.1, z = 0.1;
         
         glColor3f(0,0,0);
         glPushMatrix();
@@ -388,14 +398,14 @@ void drawCoasterPath(){
             glPushMatrix();
                 glTranslatef(u.x,u.y,u.z);
                 //printf("u x: %f\tu y: %f\tu z: %f\n",u.x,u.y,u.z);
-                glScalef(0.003, 0.003, 0.003);
+                glScalef(x, y, z);
                 drawBox();
             glPopMatrix();
 
             glColor3f(1,0,0);
             glPushMatrix();
                 glTranslatef(-u.x,-u.y,-u.z);
-                glScalef(0.003, 0.003, 0.003);
+                glScalef(x, y, z);
                 drawBox();
             glPopMatrix();
 
@@ -530,10 +540,11 @@ float vectorMagnitude(const vector3* v){
 
 void normalizeVector(vector3* v){
     float mag = vectorMagnitude(v);
-    scale(&v, 1/mag);
+    scale(v, (1/mag));    
 }
 
 void scale(vector3* v, float amount){
+    
     v->x *= amount;
     v->y *= amount;
     v->z *= amount;
@@ -545,10 +556,10 @@ void calculateUpVector(const vector3* r, const vector3* s, vector3* up){
     float mag = vectorMagnitude(r);
     float k = numerator.y/(mag*mag*mag);
     //k /= 8;
-    if(k > M_PI/2)
-        k = M_PI/2;
-    else if(k < -M_PI/2)
-        k = -M_PI/2;
+//    if(k > M_PI/2)
+//        k = M_PI/2;
+//    else if(k < -M_PI/2)
+//        k = -M_PI/2;
     
     up->x = (1-cos(-k))*r->x*r->y-sin(-k)*r->z;
     up->y = (1-cos(-k))*r->y*r->y+cos(-k);
