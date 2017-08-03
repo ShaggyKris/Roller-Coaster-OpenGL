@@ -32,7 +32,7 @@ static void myReshape(int w, int h);
 static void init(void);
 
 static void drawText(double x, double y, char *text);
-static void drawBox();
+static void drawBox(float x, float y, float z);
 
 void q(const vector3* list, float t, int derivation, vector3* result);
 float uniformBSpline(float p0, float p1, float p2, float p3, float t);
@@ -49,3 +49,4 @@ void scale(vector3* v, float amount);
 void calculateUpVector(const vector3* r, const vector3* s, vector3* up);
 vector3 negativeVector(vector3 v);
 void vectorAdd_Sub(vector3* affected, const vector3* effector, int flag);
+float distanceBetweenPoints(const vector3* curr, const vector3* prev);
