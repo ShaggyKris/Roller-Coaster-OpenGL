@@ -24,7 +24,7 @@ CLEAN_SUBPROJECTS=${CLEAN_SUBPROJECTS_${SUBPROJECTS}}
 
 
 # Project Name
-PROJECTNAME=Roller-Coaster-OpenGL
+PROJECTNAME=RollerCoaster
 
 # Active Configuration
 DEFAULTCONF=Debug

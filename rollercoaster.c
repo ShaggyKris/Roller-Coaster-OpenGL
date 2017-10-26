@@ -122,8 +122,8 @@ void myDisplay(){
         
     }
     else{
-    gluLookAt(distance*sin(rotate*10), 2, distance*cos(rotate*10),
-            0, 1, 0,
+    gluLookAt(distance*sin(rotate*10), 1, distance*cos(rotate*10),
+            0, 10, 0,
             0, 1, 0);
     }
 //    vectorAdd_Sub(&cameraPos, &cameraUp, -1);
@@ -329,7 +329,7 @@ void drawCoasterPath(){
         controlPoints[i].x = ((float)(rand()%NUM_CONTROL_POINTS+1)-NUM_CONTROL_POINTS)+1;
         
         if(abs(controlPoints[i].y - controlPoints[i-2].y) < 10 || abs(controlPoints[i].y - controlPoints[i-1].y) < 10)
-            controlPoints[i].y = (float)(rand()%(SKY_HEIGHT-3)-5);
+            controlPoints[i].y = (float)(rand()%(SKY_HEIGHT-3));
         else
             controlPoints[i].y = (float)(rand()%(SKY_HEIGHT-3));
             
@@ -358,19 +358,21 @@ void drawCoasterPath(){
    
      
     //Draw the main line track. This would have been omitted had I got things working.
-//    glBegin(GL_LINE_LOOP);
-//    for(float i = 0; i < NUM_CONTROL_POINTS; i+=0.01){
-//        q(controlPoints, i, 0, &point);
-//        q(controlPoints, i, 1, &n);
-//        
-//        step = RAIL_WIDTH/(sqrt(n.x*n.x + n.y*n.y + n.z*n.z));
-//        if(step < 0.01) step = 0.01;
-//        
-//             
-//        glColor3f(1,1,1);
-//        glVertex3f(point.x,point.y,point.z);
-//    }
-//    glEnd();
+/*
+    glBegin(GL_LINE_LOOP);
+    for(float i = 0; i < NUM_CONTROL_POINTS; i+=0.01){
+        q(controlPoints, i, 0, &point);
+        q(controlPoints, i, 1, &n);
+        
+        step = RAIL_WIDTH/(sqrt(n.x*n.x + n.y*n.y + n.z*n.z));
+        if(step < 0.01) step = 0.01;
+        
+             
+        glColor3f(1,1,1);
+        glVertex3f(point.x,point.y,point.z);
+    }
+    glEnd();
+*/
     float x,y,z,f;
     x = y = z = 0.1;
     
@@ -388,20 +390,26 @@ void drawCoasterPath(){
             (point.x - lastPoint.x)*(point.x - lastPoint.x) +
             (point.y - lastPoint.y)*(point.y - lastPoint.y) +
             (point.z - lastPoint.z)*(point.z - lastPoint.z)
-            )*5;
-        printf("Pointl: %f\tLastPointl: %f\tLength: %f\n",pointl,lastPointl,f);
+            )*7;
+/*
+        f = abs((pointl - lastPointl)*(pointl - lastPointl));
+*/
+        //printf("Pointl: %f\tLastPointl: %f\tLength: %f\n",pointl,lastPointl,f);
         if(distance < point.x)
             distance = point.x+1;
         else if(distance < point.z)
             distance = point.z+1;       
         
+/*
         step = 0.1/(sqrt(n.x*n.x + n.y*n.y + n.z*n.z));
-        //if(step < 0.01) step = 0.01;
+        if(step < 0.01) step = 0.01;
+*/
         
         
         mag = vectorMagnitude(&n);
-        step = 0.1/mag;
-        //if(step < 0.01) step = 0.01;               
+        step = 0.01/mag;
+        if(step > 0.01) step = 0.01;
+        else if(step < 0.005) step = 0.005;
         
         calculateUpVector(&n, &s, &up);
         normalizeVector(&up);
@@ -422,7 +430,8 @@ void drawCoasterPath(){
         
         glColor3f(0,0,0);
         glPushMatrix();
-            
+            glPolygonMode(GL_BACK, GL_NONE);
+            glPolygonMode(GL_FRONT, GL_FILL);
             glMultMatrixf(matrix);
             glTranslatef(0, 0, 0);
             
@@ -458,8 +467,28 @@ void drawCoasterPath(){
     glEndList();
 }
 
-
-
+/*
+void circleAroundPoint(vector3* right, vector3* up, vector3* point, float x, float y ){
+    glBegin(GL_POINTS);
+    vector3 p = {
+      (point->x+x*right->x+y*up->x),
+      (point->y+x*right->y+y*up->y),
+      (point->z+x*right->z+y*up->z)
+    };
+    glVertex3f(
+        (point->x+x*right->x+y*up->x),
+        (point->y+x*right->y+y*up->y),
+        (point->z+x*right->z+y*up->z)   
+    );
+    
+    glEnd();
+    
+    
+    
+    
+    
+}
+*/
 void drawSquare(float x, float y, float z){
     glBegin(GL_LINE_LOOP);
     glVertex3f(x-1, y+1, z);
@@ -474,7 +503,7 @@ void drawBox(float x, float y, float z){
     //float x = 1, y = 1, z = 4; 
 
 
-/*Back face*/
+/*B ack face*/
 //    glColor3f(1.0,1.0,0);
         glVertex3f(x,y,-z);
         glVertex3f(x,-y,-z);
