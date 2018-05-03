@@ -33,7 +33,7 @@
 #define RAD2DEG 180.0/M_PI
 #define DEG2RAD M_PI/180.0
 
-#define NUM_CONTROL_POINTS 30
+#define NUM_CONTROL_POINTS 20
 #define RAIL_WIDTH 0.1
 
 
